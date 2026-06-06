@@ -80,11 +80,15 @@ def mock_dynamodb_table():
 
 
 @pytest.fixture
-def mock_bedrock_runtime():
-    """Mock Bedrock runtime for classifier and router tests."""
+def mock_bedrock_runtime_classifier():
+    """Mock Bedrock runtime for classifier tests."""
     with patch("src.classifier.classifier.bedrock_runtime") as mock_bedrock:
         yield mock_bedrock
 
+
+@pytest.fixture
+def mock_bedrock_runtime_router():
+    """Mock Bedrock runtime for router tests."""
     with patch("src.router.router.bedrock_runtime") as mock_bedrock:
         yield mock_bedrock
 
