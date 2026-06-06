@@ -38,7 +38,7 @@ class RouterTierSettings(BaseSettings):
 
 
 class RouterSettings(BaseSettings):
-    tiers: dict[str, RouterTierSettings]
+    tiers: dict[str, RouterTierSettings] = {}
 
 
 class CacheRedisSettings(BaseSettings):
@@ -64,7 +64,8 @@ class CacheQdrantSettings(BaseSettings):
 
 class CacheSettings(BaseSettings):
     enabled: bool = True
-    redis: CacheRedisSettings
+    redis: CacheRedisSettings = Field(default_factory=CacheRedisSettings)
+    qdrant: CacheQdrantSettings = Field(default_factory=CacheQdrantSettings)
     qdrant: CacheQdrantSettings
 
 

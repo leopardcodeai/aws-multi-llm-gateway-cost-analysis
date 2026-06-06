@@ -135,16 +135,17 @@ class SemanticCache:
 
             if results:
                 hit = results[0]
-                payload = hit.payload
-                entry = CacheEntry(
-                    response=payload["response"],
-                    model=payload["model"],
-                    tokens=payload["tokens"],
-                    cost=payload["cost"],
-                    timestamp=payload["timestamp"],
-                )
-                logger.debug("semantic_cache_hit", score=hit.score, threshold=threshold)
-                return entry
+                payload = hit.payload or {}
+                if isinstance(payload, dict):
+                    entry = CacheEntry(
+                        response=payload.get("response", {}),
+                        model=payload.get("model", ""),
+                        tokens=payload.get("tokens", 0),
+                        cost=payload.get("cost", 0.0),
+                        timestamp=payload.get("timestamp", 0.0),
+                    )
+                    logger.debug("semantic_cache_hit", score=hit.score, threshold=threshold)
+                    return entry
 
         except Exception as e:
             logger.warning("qdrant_search_failed", error=str(e))
