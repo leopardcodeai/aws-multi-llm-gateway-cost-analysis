@@ -9,14 +9,15 @@ from src.auth.auth import get_tenant_by_key
 from src.config import get_settings
 
 logger = structlog.get_logger()
-settings = get_settings()
 
-PUBLIC_PATHS = ["/health", "/metrics", "/docs", "/redoc", "/openapi.json"]
+
+def _get_auth_enabled():
+    return get_settings().auth.enabled
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        if not settings.auth.enabled:
+        if not _get_auth_enabled():
             return await call_next(request)
 
         if any(request.url.path.startswith(path) for path in PUBLIC_PATHS):

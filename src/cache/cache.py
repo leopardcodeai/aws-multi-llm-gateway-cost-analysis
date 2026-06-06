@@ -11,7 +11,14 @@ from sentence_transformers import SentenceTransformer
 from src.config import get_settings
 
 logger = structlog.get_logger()
-settings = get_settings()
+
+
+def _get_cache_settings():
+    return get_settings().cache
+
+
+def _get_model_settings():
+    return get_settings().models
 
 
 @dataclass
@@ -34,23 +41,26 @@ class SemanticCache:
         if self._initialized:
             return
 
+        cache_settings = _get_cache_settings()
+        model_settings = _get_model_settings()
+
         self.redis = redis.Redis(
-            host=settings.cache.redis.host,
-            port=settings.cache.redis.port,
-            db=settings.cache.redis.db,
-            password=settings.cache.redis.password,
+            host=cache_settings.redis.host,
+            port=cache_settings.redis.port,
+            db=cache_settings.redis.db,
+            password=cache_settings.redis.password,
             decode_responses=True,
         )
 
         self.qdrant = AsyncQdrantClient(
-            host=settings.cache.qdrant.host,
-            port=settings.cache.qdrant.port,
-            https=settings.cache.qdrant.https,
-            api_key=settings.cache.qdrant.api_key,
+            host=cache_settings.qdrant.host,
+            port=cache_settings.qdrant.port,
+            https=cache_settings.qdrant.https,
+            api_key=cache_settings.qdrant.api_key,
         )
 
         self.embedder = SentenceTransformer(
-            settings.models.embedding_model, device=settings.models.device
+            model_settings.embedding_model, device=model_settings.device
         )
 
         await self._ensure_collection()
@@ -77,10 +87,11 @@ class SemanticCache:
         return " ".join(user_msgs).strip().lower()
 
     def _make_key(self, normalized: str) -> str:
-        return f"{settings.cache.redis.key_prefix}{hashlib.sha256(normalized.encode()).hexdigest()}"
+        cache_settings = _get_cache_settings()
+        return f"{cache_settings.redis.key_prefix}{hashlib.sha256(normalized.encode()).hexdigest()}"
 
     async def get_exact(self, messages: list) -> CacheEntry | None:
-        if not settings.cache.enabled or not self.redis:
+        if not _get_cache_settings().enabled or not self.redis:
             return None
 
         normalized = self._normalize_prompt(messages)
@@ -98,7 +109,7 @@ class SemanticCache:
         return None
 
     async def set_exact(self, messages: list, entry: CacheEntry):
-        if not settings.cache.enabled or not self.redis:
+        if not _get_cache_settings().enabled or not self.redis:
             return
 
         normalized = self._normalize_prompt(messages)
@@ -107,7 +118,7 @@ class SemanticCache:
         try:
             await self.redis.setex(
                 key,
-                settings.cache.redis.ttl,
+                _get_cache_settings().redis.ttl,
                 json.dumps(entry.__dict__),
             )
         except Exception as e:
@@ -116,17 +127,18 @@ class SemanticCache:
     async def get_semantic(
         self, messages: list, threshold: float | None = None
     ) -> CacheEntry | None:
-        if not settings.cache.enabled or not self.qdrant or not self.embedder:
+        cache_settings = _get_cache_settings()
+        if not cache_settings.enabled or not self.qdrant or not self.embedder:
             return None
 
         normalized = self._normalize_prompt(messages)
-        threshold = threshold or settings.cache.qdrant.similarity_threshold
+        threshold = threshold or cache_settings.qdrant.similarity_threshold
 
         try:
             embedding = self.embedder.encode([normalized])[0].tolist()
 
             results = await self.qdrant.search(
-                collection_name=settings.cache.qdrant.collection,
+                collection_name=cache_settings.qdrant.collection,
                 query_vector=embedding,
                 limit=1,
                 score_threshold=threshold,
@@ -153,7 +165,8 @@ class SemanticCache:
         return None
 
     async def set_semantic(self, messages: list, entry: CacheEntry):
-        if not settings.cache.enabled or not self.qdrant or not self.embedder:
+        cache_settings = _get_cache_settings()
+        if not cache_settings.enabled or not self.qdrant or not self.embedder:
             return
 
         normalized = self._normalize_prompt(messages)
@@ -175,7 +188,7 @@ class SemanticCache:
             )
 
             await self.qdrant.upsert(
-                collection_name=settings.cache.qdrant.collection,
+                collection_name=cache_settings.qdrant.collection,
                 points=[point],
             )
 

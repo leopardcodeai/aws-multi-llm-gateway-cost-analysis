@@ -11,10 +11,21 @@ from botocore.exceptions import ClientError
 from src.config import get_settings
 
 logger = structlog.get_logger()
-settings = get_settings()
 
-dynamodb = boto3.resource("dynamodb", region_name=settings.auth.dynamodb_region)
-table = dynamodb.Table(settings.auth.dynamodb_table)
+
+def _get_auth_settings():
+    return get_settings().auth
+
+
+def _get_dynamodb_resource():
+    auth_settings = _get_auth_settings()
+    return boto3.resource("dynamodb", region_name=auth_settings.dynamodb_region)
+
+
+def _get_table():
+    dynamodb = _get_dynamodb_resource()
+    auth_settings = _get_auth_settings()
+    return dynamodb.Table(auth_settings.dynamodb_table)
 
 
 @dataclass
@@ -36,7 +47,8 @@ def hash_api_key(api_key: str) -> str:
 
 
 def generate_api_key() -> str:
-    return f"{settings.auth.api_key_prefix}{secrets.token_urlsafe(32)}"
+    auth_settings = _get_auth_settings()
+    return f"{auth_settings.api_key_prefix}{secrets.token_urlsafe(32)}"
 
 
 async def create_tenant(
@@ -50,15 +62,16 @@ async def create_tenant(
     api_key_hash = hash_api_key(api_key)
 
     now = time.time()
+    auth_settings = _get_auth_settings()
     item = {
         "tenant_id": tenant_id,
         "api_key_hash": api_key_hash,
         "name": name,
-        "monthly_quota": monthly_quota or settings.auth.default_quotas["monthly_tokens"],
-        "daily_quota": daily_quota or settings.auth.default_quotas["daily_requests"],
+        "monthly_quota": monthly_quota or auth_settings.default_quotas["monthly_tokens"],
+        "daily_quota": daily_quota or auth_settings.default_quotas["daily_requests"],
         "used_tokens_month": 0,
         "used_requests_day": 0,
-        "allowed_models": allowed_models or settings.auth.default_quotas["allowed_models"],
+        "allowed_models": allowed_models or auth_settings.default_quotas["allowed_models"],
         "created_at": now,
         "expires_at": None,
         "month_start": int(now // (30 * 86400)) * (30 * 86400),
@@ -68,7 +81,7 @@ async def create_tenant(
     try:
         await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: table.put_item(
+            lambda: _get_table().put_item(
                 Item=item, ConditionExpression="attribute_not_exists(tenant_id)"
             ),
         )
@@ -86,7 +99,7 @@ async def get_tenant_by_key(api_key: str) -> Tenant | None:
     try:
         response = await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: table.query(
+            lambda: _get_table().query(
                 IndexName="api_key_hash-index",
                 KeyConditionExpression="api_key_hash = :hk",
                 ExpressionAttributeValues={":hk": api_key_hash},
@@ -138,7 +151,7 @@ async def record_usage(tenant_id: str, tokens: int):
     try:
         await asyncio.get_event_loop().run_in_executor(
             None,
-            lambda: table.update_item(
+            lambda: _get_table().update_item(
                 Key={"tenant_id": tenant_id},
                 UpdateExpression="ADD used_tokens_month :tokens, used_requests_day :req SET month_start = :ms, day_start = :ds",
                 ExpressionAttributeValues={

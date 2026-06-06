@@ -13,7 +13,14 @@ from src.gateway.routes import admin, chat, health
 from src.observability.metrics import setup_metrics
 
 logger = structlog.get_logger()
-settings = get_settings()
+
+
+def _get_gateway_settings():
+    return get_settings().gateway
+
+
+def _get_debug_mode():
+    return get_settings().gateway.debug
 
 
 @asynccontextmanager
@@ -29,8 +36,8 @@ app = FastAPI(
     description="Multi-LLM Routing & Cost-Optimization Gateway",
     version="0.1.0",
     lifespan=lifespan,
-    docs_url="/docs" if settings.gateway.debug else None,
-    redoc_url="/redoc" if settings.gateway.debug else None,
+    docs_url="/docs" if _get_debug_mode() else None,
+    redoc_url="/redoc" if _get_debug_mode() else None,
 )
 
 app.add_middleware(

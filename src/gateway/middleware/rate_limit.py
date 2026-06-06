@@ -8,7 +8,11 @@ from starlette.responses import JSONResponse
 from src.config import get_settings
 
 logger = structlog.get_logger()
-settings = get_settings()
+
+
+def _get_rate_limits():
+    return get_settings().auth.rate_limit
+
 
 request_counts: dict[str, int] = {}
 window_starts: dict[str, float] = {}
@@ -36,8 +40,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         request_counts[minute_key] = request_counts.get(minute_key, 0) + 1
         request_counts[hour_key] = request_counts.get(hour_key, 0) + 1
 
-        rpm_limit = settings.auth.rate_limit["requests_per_minute"]
-        rph_limit = settings.auth.rate_limit["requests_per_hour"]
+        rate_limits = _get_rate_limits()
+        rpm_limit = rate_limits["requests_per_minute"]
+        rph_limit = rate_limits["requests_per_hour"]
 
         if request_counts[minute_key] > rpm_limit:
             return JSONResponse(

@@ -17,7 +17,11 @@ from src.observability.metrics import (
 from src.router.router import ModelResponse, route_request
 
 logger = structlog.get_logger()
-settings = get_settings()
+
+
+def _get_cache_enabled():
+    return get_settings().cache.enabled
+
 
 router = APIRouter()
 
@@ -64,7 +68,7 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
     if not quota_ok:
         raise HTTPException(status_code=429, detail=quota_msg)
 
-    if settings.cache.enabled:
+    if _get_cache_enabled():
         cached = await cache.get_exact([m.model_dump() for m in body.messages])
         if cached:
             record_cache_hit("exact")

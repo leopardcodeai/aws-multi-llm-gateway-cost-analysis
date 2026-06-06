@@ -7,13 +7,21 @@ from botocore.config import Config
 from src.config import get_settings
 
 logger = structlog.get_logger()
-settings = get_settings()
 
-BEDROCK_CONFIG = Config(
-    region_name=settings.classifier.region,
-    retries={"max_attempts": 3, "mode": "adaptive"},
-)
 
+def _get_classifier_settings():
+    return get_settings().classifier
+
+
+def _get_bedrock_config():
+    classifier_settings = _get_classifier_settings()
+    return Config(
+        region_name=classifier_settings.region,
+        retries={"max_attempts": 3, "mode": "adaptive"},
+    )
+
+
+BEDROCK_CONFIG = _get_bedrock_config()
 bedrock_runtime = boto3.client("bedrock-runtime", config=BEDROCK_CONFIG)
 
 CLASSIFIER_PROMPT = """Analyze the complexity of the following user prompt and classify it as SIMPLE, MEDIUM, or COMPLEX.
@@ -33,17 +41,18 @@ Prompt: {prompt}"""
 
 async def classify_complexity(prompt: str) -> dict:
     try:
+        classifier_settings = _get_classifier_settings()
         formatted_prompt = CLASSIFIER_PROMPT.format(prompt=prompt[:8000])
 
         body = {
             "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": settings.classifier.max_tokens,
-            "temperature": settings.classifier.temperature,
+            "max_tokens": classifier_settings.max_tokens,
+            "temperature": classifier_settings.temperature,
             "messages": [{"role": "user", "content": formatted_prompt}],
         }
 
         response = bedrock_runtime.invoke_model(
-            modelId=settings.classifier.model_id,
+            modelId=classifier_settings.model_id,
             body=json.dumps(body),
             contentType="application/json",
             accept="application/json",
@@ -75,7 +84,7 @@ async def classify_complexity(prompt: str) -> dict:
 
 
 def get_tier_for_score(score: float) -> str:
-    thresholds = settings.classifier.complexity_thresholds
+    thresholds = _get_classifier_settings().complexity_thresholds
     if score <= thresholds["simple"]:
         return "simple"
     elif score <= thresholds["medium"]:

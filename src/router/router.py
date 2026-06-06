@@ -13,15 +13,26 @@ from src.classifier.classifier import classify_complexity
 from src.config import get_settings
 
 logger = structlog.get_logger()
-settings = get_settings()
 
-BEDROCK_CONFIG = Config(
-    region_name=settings.classifier.region,
-    retries={"max_attempts": 3, "mode": "adaptive"},
-)
 
+def _get_settings():
+    return get_settings()
+
+
+def _get_bedrock_config():
+    settings = _get_settings()
+    return Config(
+        region_name=settings.classifier.region,
+        retries={"max_attempts": 3, "mode": "adaptive"},
+    )
+
+
+BEDROCK_CONFIG = _get_bedrock_config()
 bedrock_runtime = boto3.client("bedrock-runtime", config=BEDROCK_CONFIG)
-openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+
+def _get_openai_client():
+    return AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 @dataclass
@@ -36,12 +47,6 @@ class ModelResponse:
     fallback_used: bool = False
 
 
-TIER_MODELS = {
-    "simple": settings.router.tiers["simple"],
-    "medium": settings.router.tiers["medium"],
-    "complex": settings.router.tiers["complex"],
-}
-
 MODEL_COSTS = {
     "meta.llama3-1-8b-instruct-v1:0": 0.00016,
     "meta.llama3-8b-instruct-v1:0": 0.00016,
@@ -51,6 +56,15 @@ MODEL_COSTS = {
     "gpt-4o": 5.00 / 1000,
     "anthropic.claude-3-5-sonnet-20241022-v2:0": 0.003,
 }
+
+
+def _get_tier_models():
+    settings = _get_settings()
+    return {
+        "simple": settings.router.tiers["simple"],
+        "medium": settings.router.tiers["medium"],
+        "complex": settings.router.tiers["complex"],
+    }
 
 
 async def invoke_bedrock(
@@ -110,7 +124,7 @@ async def invoke_openai(
 ) -> ModelResponse:
     start = time.perf_counter()
 
-    response = await openai_client.chat.completions.create(
+    response = await _get_openai_client().chat.completions.create(
         model=model_id,
         messages=messages,
         max_tokens=max_tokens,
@@ -174,7 +188,7 @@ async def route_request(
     tier = classification["tier"]
     confidence = classification["confidence"]
 
-    tier_config = TIER_MODELS[tier]
+    tier_config = _get_tier_models()[tier]
     primary_model = tier_config.primary
     fallback_model = tier_config.fallback
     final_fallback = tier_config.final_fallback
