@@ -66,7 +66,6 @@ class CacheSettings(BaseSettings):
     enabled: bool = True
     redis: CacheRedisSettings = Field(default_factory=CacheRedisSettings)
     qdrant: CacheQdrantSettings = Field(default_factory=CacheQdrantSettings)
-    qdrant: CacheQdrantSettings
 
 
 class AuthSettings(BaseSettings):
