@@ -1,8 +1,10 @@
 import json
+
 import boto3
-from botocore.config import Config
-from src.config import get_settings
 import structlog
+from botocore.config import Config
+
+from src.config import get_settings
 
 logger = structlog.get_logger()
 settings = get_settings()

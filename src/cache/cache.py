@@ -1,12 +1,12 @@
 import hashlib
 import json
 from dataclasses import dataclass
-from typing import Optional
+
 import redis.asyncio as redis
-from qdrant_client import AsyncQdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct
-from sentence_transformers import SentenceTransformer
 import structlog
+from qdrant_client import AsyncQdrantClient
+from qdrant_client.models import Distance, PointStruct, VectorParams
+from sentence_transformers import SentenceTransformer
 
 from src.config import get_settings
 
@@ -25,9 +25,9 @@ class CacheEntry:
 
 class SemanticCache:
     def __init__(self):
-        self.redis: Optional[redis.Redis] = None
-        self.qdrant: Optional[AsyncQdrantClient] = None
-        self.embedder: Optional[SentenceTransformer] = None
+        self.redis: redis.Redis | None = None
+        self.qdrant: AsyncQdrantClient | None = None
+        self.embedder: SentenceTransformer | None = None
         self._initialized = False
 
     async def initialize(self):
@@ -79,7 +79,7 @@ class SemanticCache:
     def _make_key(self, normalized: str) -> str:
         return f"{settings.cache.redis.key_prefix}{hashlib.sha256(normalized.encode()).hexdigest()}"
 
-    async def get_exact(self, messages: list) -> Optional[CacheEntry]:
+    async def get_exact(self, messages: list) -> CacheEntry | None:
         if not settings.cache.enabled or not self.redis:
             return None
 
@@ -114,8 +114,8 @@ class SemanticCache:
             logger.warning("redis_set_failed", error=str(e))
 
     async def get_semantic(
-        self, messages: list, threshold: Optional[float] = None
-    ) -> Optional[CacheEntry]:
+        self, messages: list, threshold: float | None = None
+    ) -> CacheEntry | None:
         if not settings.cache.enabled or not self.qdrant or not self.embedder:
             return None
 

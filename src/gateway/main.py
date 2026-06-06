@@ -1,15 +1,16 @@
 from contextlib import asynccontextmanager
+
+import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import structlog
 
-from src.gateway.routes import chat, health, admin
-from src.gateway.middleware.auth import AuthMiddleware
-from src.gateway.middleware.rate_limit import RateLimitMiddleware
-from src.gateway.middleware.logging import LoggingMiddleware
-from src.observability.metrics import setup_metrics
 from src.config import get_settings
+from src.gateway.middleware.auth import AuthMiddleware
+from src.gateway.middleware.logging import LoggingMiddleware
+from src.gateway.middleware.rate_limit import RateLimitMiddleware
+from src.gateway.routes import admin, chat, health
+from src.observability.metrics import setup_metrics
 
 logger = structlog.get_logger()
 settings = get_settings()

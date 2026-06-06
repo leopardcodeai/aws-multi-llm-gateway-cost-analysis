@@ -1,9 +1,9 @@
 from functools import lru_cache
 from pathlib import Path
-from typing import Optional
+
+import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-import yaml
 
 
 class GatewaySettings(BaseSettings):
@@ -31,7 +31,7 @@ class ClassifierSettings(BaseSettings):
 class RouterTierSettings(BaseSettings):
     primary: str
     fallback: str
-    final_fallback: Optional[str] = None
+    final_fallback: str | None = None
     provider: str
     max_tokens: int
     temperature: float
@@ -45,7 +45,7 @@ class CacheRedisSettings(BaseSettings):
     host: str = "localhost"
     port: int = 6379
     db: int = 0
-    password: Optional[str] = None
+    password: str | None = None
     ttl: int = 86400
     key_prefix: str = "llmgw:cache:"
 
@@ -54,7 +54,7 @@ class CacheQdrantSettings(BaseSettings):
     host: str = "localhost"
     port: int = 6333
     https: bool = False
-    api_key: Optional[str] = None
+    api_key: str | None = None
     collection: str = "semantic_cache"
     vector_size: int = 384
     similarity_threshold: float = 0.92

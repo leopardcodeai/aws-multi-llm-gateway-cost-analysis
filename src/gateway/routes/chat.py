@@ -1,19 +1,20 @@
 import time
-from fastapi import APIRouter, Request, HTTPException
-from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
-import structlog
+from typing import Any
 
-from src.router.router import route_request, ModelResponse
-from src.cache.cache import cache, CacheEntry
-from src.auth.auth import check_quota, record_usage, is_model_allowed
+import structlog
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
+
+from src.auth.auth import check_quota, is_model_allowed, record_usage
+from src.cache.cache import CacheEntry, cache
+from src.config import get_settings
 from src.observability.metrics import (
-    record_request,
     record_cache_hit,
     record_cache_miss,
     record_error,
+    record_request,
 )
-from src.config import get_settings
+from src.router.router import ModelResponse, route_request
 
 logger = structlog.get_logger()
 settings = get_settings()
@@ -28,11 +29,11 @@ class ChatMessage(BaseModel):
 
 class ChatCompletionRequest(BaseModel):
     model: str = "auto"
-    messages: List[ChatMessage]
+    messages: list[ChatMessage]
     temperature: float = 0.7
     max_tokens: int = 4096
     stream: bool = False
-    tenant_id: Optional[str] = None
+    tenant_id: str | None = None
 
 
 class ChatCompletionResponse(BaseModel):
@@ -40,11 +41,11 @@ class ChatCompletionResponse(BaseModel):
     object: str = "chat.completion"
     created: int
     model: str
-    choices: List[Dict[str, Any]]
-    usage: Dict[str, int]
+    choices: list[dict[str, Any]]
+    usage: dict[str, int]
     cost_usd: float
     cached: bool = False
-    tier: Optional[str] = None
+    tier: str | None = None
     fallback_used: bool = False
 
 

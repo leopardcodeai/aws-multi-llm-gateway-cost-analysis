@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Request, HTTPException
-from pydantic import BaseModel
-from typing import Optional, List
 import structlog
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
 
 from src.auth.auth import create_tenant
 from src.config import get_settings
@@ -15,9 +14,9 @@ router = APIRouter()
 class CreateTenantRequest(BaseModel):
     tenant_id: str
     name: str
-    monthly_quota: Optional[int] = None
-    daily_quota: Optional[int] = None
-    allowed_models: Optional[List[str]] = None
+    monthly_quota: int | None = None
+    daily_quota: int | None = None
+    allowed_models: list[str] | None = None
 
 
 class TenantResponse(BaseModel):
@@ -27,8 +26,8 @@ class TenantResponse(BaseModel):
     daily_quota: int
     used_tokens_month: int
     used_requests_day: int
-    allowed_models: List[str]
-    api_key: Optional[str] = None
+    allowed_models: list[str]
+    api_key: str | None = None
 
 
 @router.post("/tenants", response_model=TenantResponse)

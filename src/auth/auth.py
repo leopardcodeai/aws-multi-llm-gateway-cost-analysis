@@ -3,10 +3,10 @@ import hashlib
 import secrets
 import time
 from dataclasses import dataclass
-from typing import Optional
+
 import boto3
-from botocore.exceptions import ClientError
 import structlog
+from botocore.exceptions import ClientError
 
 from src.config import get_settings
 
@@ -28,7 +28,7 @@ class Tenant:
     used_requests_day: int
     allowed_models: list
     created_at: float
-    expires_at: Optional[float] = None
+    expires_at: float | None = None
 
 
 def hash_api_key(api_key: str) -> str:
@@ -42,9 +42,9 @@ def generate_api_key() -> str:
 async def create_tenant(
     tenant_id: str,
     name: str,
-    monthly_quota: Optional[int] = None,
-    daily_quota: Optional[int] = None,
-    allowed_models: Optional[list] = None,
+    monthly_quota: int | None = None,
+    daily_quota: int | None = None,
+    allowed_models: list | None = None,
 ) -> str:
     api_key = generate_api_key()
     api_key_hash = hash_api_key(api_key)
@@ -80,7 +80,7 @@ async def create_tenant(
         raise
 
 
-async def get_tenant_by_key(api_key: str) -> Optional[Tenant]:
+async def get_tenant_by_key(api_key: str) -> Tenant | None:
     api_key_hash = hash_api_key(api_key)
 
     try:

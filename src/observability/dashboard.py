@@ -1,9 +1,10 @@
-import streamlit as st
+from datetime import datetime
+
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import pandas as pd
 import requests
-from datetime import datetime
+import streamlit as st
 import structlog
 
 logger = structlog.get_logger()

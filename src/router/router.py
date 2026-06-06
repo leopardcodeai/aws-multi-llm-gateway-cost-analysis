@@ -3,14 +3,14 @@ import json
 import os
 import time
 from dataclasses import dataclass
-from typing import Optional
+
 import boto3
+import structlog
 from botocore.config import Config
 from openai import AsyncOpenAI
-import structlog
 
-from src.config import get_settings
 from src.classifier.classifier import classify_complexity
+from src.config import get_settings
 
 logger = structlog.get_logger()
 settings = get_settings()
@@ -211,7 +211,7 @@ async def route_request(
 async def try_fallback(
     messages: list,
     fallback: str,
-    final_fallback: Optional[str],
+    final_fallback: str | None,
     tier_config,
     confidence: float,
     error: str,

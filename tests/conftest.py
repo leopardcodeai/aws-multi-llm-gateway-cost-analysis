@@ -1,6 +1,7 @@
-import pytest
 import sys
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
@@ -8,18 +9,18 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 @pytest.fixture(autouse=True)
 def mock_settings(monkeypatch):
     from src.config import (
-        Settings,
-        GatewaySettings,
+        AuthSettings,
+        CacheQdrantSettings,
+        CacheRedisSettings,
+        CacheSettings,
         ClassifierSettings,
+        FallbackSettings,
+        GatewaySettings,
+        ModelSettings,
+        ObservabilitySettings,
         RouterSettings,
         RouterTierSettings,
-        CacheSettings,
-        CacheRedisSettings,
-        CacheQdrantSettings,
-        AuthSettings,
-        ObservabilitySettings,
-        ModelSettings,
-        FallbackSettings,
+        Settings,
     )
 
     monkeypatch.setattr(
