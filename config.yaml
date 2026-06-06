@@ -1,0 +1,104 @@
+gateway:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  timeout: 60
+  max_request_size: 10485760  # 10MB
+
+classifier:
+  model_id: "anthropic.claude-3-5-haiku-20241022-v1:0"
+  region: "us-east-1"
+  temperature: 0.0
+  max_tokens: 10
+  confidence_threshold: 0.7
+  complexity_thresholds:
+    simple: 0.33
+    medium: 0.66
+    complex: 1.0
+
+router:
+  tiers:
+    simple:
+      primary: "meta.llama3-1-8b-instruct-v1:0"
+      fallback: "meta.llama3-8b-instruct-v1:0"
+      provider: "bedrock"
+      max_tokens: 4096
+      temperature: 0.1
+    medium:
+      primary: "meta.llama3-1-70b-instruct-v1:0"
+      fallback: "meta.llama4-scout-17b-instruct-v1:0"
+      provider: "bedrock"
+      max_tokens: 8192
+      temperature: 0.3
+    complex:
+      primary: "gpt-4o-mini"
+      fallback: "gpt-4o"
+      final_fallback: "anthropic.claude-3-5-sonnet-20241022-v2:0"
+      provider: "openai"
+      max_tokens: 16384
+      temperature: 0.5
+
+cache:
+  enabled: true
+  redis:
+    host: "localhost"
+    port: 6379
+    db: 0
+    password: null
+    ttl: 86400  # 24 hours
+    key_prefix: "llmgw:cache:"
+  qdrant:
+    host: "localhost"
+    port: 6333
+    https: false
+    api_key: null
+    collection: "semantic_cache"
+    vector_size: 384  # all-MiniLM-L6-v2
+    similarity_threshold: 0.92
+    hnsw_ef: 128
+    exact_match_boost: 1.0
+
+auth:
+  enabled: true
+  api_key_prefix: "llmgw_"
+  dynamodb:
+    table_name: "llm-gateway-tenants"
+    region: "us-east-1"
+  default_quotas:
+    monthly_tokens: 100000
+    daily_requests: 1000
+    allowed_models: ["auto"]
+  rate_limit:
+    requests_per_minute: 60
+    requests_per_hour: 1000
+    burst: 10
+
+observability:
+  metrics:
+    enabled: true
+    port: 9090
+    path: "/metrics"
+  logging:
+    level: "INFO"
+    format: "json"
+    correlation_id_header: "X-Correlation-ID"
+  dashboard:
+    type: "streamlit"  # or "grafana"
+    host: "0.0.0.0"
+    port: 8501
+  tracing:
+    enabled: false
+    sample_rate: 0.1
+
+models:
+  embedding:
+    model: "sentence-transformers/all-MiniLM-L6-v2"
+    device: "cpu"
+    batch_size: 32
+
+fallback:
+  enabled: true
+  max_retries: 2
+  retry_delay: 1.0
+  timeout: 30.0
+  low_confidence_threshold: 0.5

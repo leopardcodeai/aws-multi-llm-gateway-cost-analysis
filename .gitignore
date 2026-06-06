@@ -1,0 +1,62 @@
+# Secrets & Credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+aws_credentials
+.aws/credentials
+.aws/config
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.venv/
+venv/
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Local development
+local/
+tmp/
+temp/
+*.sqlite
+*.db
+
+# Model artifacts
+models/
+*.bin
+*.safetensors
+
+# Terraform/Infrastructure
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+
+# Docker
+.docker/
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini

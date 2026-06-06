@@ -1,0 +1,69 @@
+```mermaid
+flowchart TB
+    subgraph Client["🌐 Client Layer"]
+        A[Multi-Tenant Clients] --> B[API Keys / JWT]
+    end
+
+    subgraph Gateway["🚪 API Gateway (FastAPI)"]
+        C[Auth & Rate Limiting] --> D[Request Validation]
+        D --> E{Cache Check}
+    end
+
+    subgraph Cache["⚡ Semantic Cache Layer"]
+        E -->|Exact Match| F[(Redis\nSHA256 Key)]
+        E -->|Semantic Match| G[(Qdrant\nVector Search)]
+        F -->|Hit| H[Return Cached Response]
+        G -->|Hit > 0.92| H
+    end
+
+    subgraph Classifier["🧠 Complexity Classifier"]
+        E -->|Miss| I[Bedrock: Claude 3.5 Haiku]
+        I --> J{Complexity Score}
+        J -->|Simple: 0-0.33| K[Route: Llama 3.1 8B]
+        J -->|Medium: 0.34-0.66| L[Route: Llama 3.1 70B / Llama 4 Scout]
+        J -->|Complex: 0.67-1.0| M[Route: GPT-4o-mini → GPT-4o]
+    end
+
+    subgraph Models["🤖 Model Execution Layer"]
+        K --> N[(Bedrock: Llama 3.1 8B\n~$0.00016/1K)]
+        L --> O[(Bedrock: Llama 3.1 70B\n~$0.00072/1K)]
+        L --> P[(Bedrock: Llama 4 Scout\n~$0.00012/1K)]
+        M --> Q[(OpenAI: GPT-4o-mini\n~$0.15/1M in)]
+        M --> R[(OpenAI: GPT-4o\n~$5.00/1M in)]
+    end
+
+    subgraph Fallback["🔄 Fallback Chain"]
+        N -->|Fail/Low Conf| S[Next Tier]
+        O -->|Fail/Low Conf| S
+        P -->|Fail/Low Conf| S
+        Q -->|Fail/Low Conf| R
+        R -->|Fail| T[Claude 3.5 Sonnet\n(Final Fallback)]
+    end
+
+    subgraph Observability["📊 Observability"]
+        C --> U[Prometheus Metrics]
+        H --> U
+        N --> U
+        O --> U
+        P --> U
+        Q --> U
+        R --> U
+        T --> U
+        U --> V[Grafana / Streamlit Dashboard]
+        V --> W[Real-time: Cost Savings, Latency, Cache Hit Rate, Error Rate]
+    end
+
+    subgraph Storage["💾 Persistence"]
+        C --> X[(DynamoDB\nTenants, Quotas, Usage)]
+        H --> Y[(Qdrant\nEmbeddings for Semantic Cache)]
+    end
+
+    style Client fill:#e3f2fd,stroke:#1976d2
+    style Gateway fill:#fff3e0,stroke:#f57c00
+    style Cache fill:#e8f5e9,stroke:#388e3c
+    style Classifier fill:#fce4ec,stroke:#c2185b
+    style Models fill:#f3e5f5,stroke:#7b1fa2
+    style Fallback fill:#fff8e1,stroke:#fbc02d
+    style Observability fill:#e0f2f1,stroke:#00796b
+    style Storage fill:#eceff1,stroke:#546e7a
+```
