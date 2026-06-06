@@ -15,6 +15,9 @@ def _get_auth_enabled():
     return get_settings().auth.enabled
 
 
+PUBLIC_PATHS = ["/health", "/metrics", "/docs", "/redoc", "/openapi.json"]
+
+
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if not _get_auth_enabled():

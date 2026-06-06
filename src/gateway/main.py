@@ -69,10 +69,11 @@ async def global_exception_handler(request: Request, exc: Exception):
 if __name__ == "__main__":
     import uvicorn
 
+    gateway_settings = _get_gateway_settings()
     uvicorn.run(
         "src.gateway.main:app",
-        host=settings.gateway.host,
-        port=settings.gateway.port,
-        workers=settings.gateway.workers,
-        reload=settings.gateway.debug,
+        host=gateway_settings.host,
+        port=gateway_settings.port,
+        workers=gateway_settings.workers,
+        reload=gateway_settings.debug,
     )

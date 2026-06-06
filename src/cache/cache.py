@@ -71,16 +71,17 @@ class SemanticCache:
         collections = await self.qdrant.get_collections()
         names = [c.name for c in collections.collections]
 
-        if settings.cache.qdrant.collection not in names:
+        cache_settings = _get_cache_settings()
+        if cache_settings.qdrant.collection not in names:
             await self.qdrant.create_collection(
-                collection_name=settings.cache.qdrant.collection,
+                collection_name=cache_settings.qdrant.collection,
                 vectors_config=VectorParams(
-                    size=settings.cache.qdrant.vector_size,
+                    size=cache_settings.qdrant.vector_size,
                     distance=Distance.COSINE,
-                    hnsw_config={"ef_construct": settings.cache.qdrant.hnsw_ef},
+                    hnsw_config={"ef_construct": cache_settings.qdrant.hnsw_ef},
                 ),
             )
-            logger.info("qdrant_collection_created", collection=settings.cache.qdrant.collection)
+            logger.info("qdrant_collection_created", collection=cache_settings.qdrant.collection)
 
     def _normalize_prompt(self, messages: list) -> str:
         user_msgs = [m["content"] for m in messages if m["role"] == "user"]
