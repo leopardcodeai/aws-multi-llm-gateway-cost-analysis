@@ -3,8 +3,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import requests
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 import structlog
 
 logger = structlog.get_logger()

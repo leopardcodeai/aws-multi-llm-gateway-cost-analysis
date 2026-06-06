@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import secrets
 import time
@@ -106,8 +107,8 @@ async def get_tenant_by_key(api_key: str) -> Optional[Tenant]:
 
 async def check_quota(tenant: Tenant, estimated_tokens: int) -> tuple[bool, str]:
     now = time.time()
-    month_start = int(now // (30 * 86400)) * (30 * 86400)
-    day_start = int(now // 86400) * 86400
+    int(now // (30 * 86400)) * (30 * 86400)
+    int(now // 86400) * 86400
 
     if tenant.used_tokens_month + estimated_tokens > tenant.monthly_quota:
         return False, "Monthly token quota exceeded"

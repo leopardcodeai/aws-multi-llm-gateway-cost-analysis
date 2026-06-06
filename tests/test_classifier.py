@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 import json
 
 from src.classifier.classifier import classify_complexity, get_tier_for_score
@@ -13,7 +13,7 @@ class TestClassifier:
                 "classification": "SIMPLE",
                 "confidence": 0.95,
                 "reasoning": "Simple classification task"
-            )}]
+            })}]
         }
 
         with patch("src.classifier.classifier.bedrock_runtime") as mock_bedrock:
@@ -30,7 +30,7 @@ class TestClassifier:
                 "classification": "MEDIUM",
                 "confidence": 0.85,
                 "reasoning": "Code generation task"
-            )}]
+            })}]
         }
 
         with patch("src.classifier.classifier.bedrock_runtime") as mock_bedrock:
@@ -47,7 +47,7 @@ class TestClassifier:
                 "classification": "COMPLEX",
                 "confidence": 0.90,
                 "reasoning": "Architecture design task"
-            )}]
+            })}]
         }
 
         with patch("src.classifier.classifier.bedrock_runtime") as mock_bedrock:

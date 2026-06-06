@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Request, HTTPException, Body
+from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
 import structlog
 
-from src.auth.auth import create_tenant, get_tenant_by_key, Tenant
+from src.auth.auth import create_tenant
 from src.config import get_settings
 
 logger = structlog.get_logger()

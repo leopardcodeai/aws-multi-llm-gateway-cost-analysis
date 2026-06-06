@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 import time
 
-from src.auth.auth import hash_api_key, generate_api_key, create_tenant, get_tenant_by_key, check_quota, record_usage, is_model_allowed
+from src.auth.auth import hash_api_key, generate_api_key, create_tenant, get_tenant_by_key, check_quota, is_model_allowed
 
 
 class TestAuth:

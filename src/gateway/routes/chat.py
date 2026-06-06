@@ -1,6 +1,6 @@
 import time
-from fastapi import APIRouter, Request, HTTPException, Depends
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Request, HTTPException
+from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import structlog
 
