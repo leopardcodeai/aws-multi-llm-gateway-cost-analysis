@@ -9,8 +9,8 @@ from src.config import get_settings
 logger = structlog.get_logger()
 settings = get_settings()
 
-request_counts = {}
-window_starts = {}
+request_counts: dict[str, int] = {}
+window_starts: dict[str, float] = {}
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):

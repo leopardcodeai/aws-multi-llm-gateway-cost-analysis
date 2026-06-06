@@ -124,9 +124,7 @@ def render_model_distribution(metrics):
 
     if models:
         df = pd.DataFrame(list(models.items()), columns=["Model", "Requests"])
-        fig = px.bar(
-            df, x="Model", y="Requests", title="Requests by Model (24h)", color="Model"
-        )
+        fig = px.bar(df, x="Model", y="Requests", title="Requests by Model (24h)", color="Model")
         st.plotly_chart(fig, use_container_width=True)
 
 
@@ -140,9 +138,7 @@ def render_latency(metrics):
             latencies[model] = (v / count) * 1000
 
     if latencies:
-        df = pd.DataFrame(
-            list(latencies.items()), columns=["Model", "Avg Latency (ms)"]
-        )
+        df = pd.DataFrame(list(latencies.items()), columns=["Model", "Avg Latency (ms)"])
         fig = px.bar(
             df,
             x="Model",
@@ -221,9 +217,7 @@ def main():
     render_errors(metrics)
 
     st.divider()
-    st.caption(
-        f"Last updated: {datetime.now().strftime('%H:%M:%S')} | Auto-refresh: 5s"
-    )
+    st.caption(f"Last updated: {datetime.now().strftime('%H:%M:%S')} | Auto-refresh: 5s")
 
 
 if __name__ == "__main__":

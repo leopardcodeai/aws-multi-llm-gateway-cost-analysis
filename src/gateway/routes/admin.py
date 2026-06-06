@@ -45,14 +45,11 @@ async def create_tenant_endpoint(body: CreateTenantRequest):
         return TenantResponse(
             tenant_id=body.tenant_id,
             name=body.name,
-            monthly_quota=body.monthly_quota
-            or settings.auth.default_quotas["monthly_tokens"],
-            daily_quota=body.daily_quota
-            or settings.auth.default_quotas["daily_requests"],
+            monthly_quota=body.monthly_quota or settings.auth.default_quotas["monthly_tokens"],
+            daily_quota=body.daily_quota or settings.auth.default_quotas["daily_requests"],
             used_tokens_month=0,
             used_requests_day=0,
-            allowed_models=body.allowed_models
-            or settings.auth.default_quotas["allowed_models"],
+            allowed_models=body.allowed_models or settings.auth.default_quotas["allowed_models"],
             api_key=api_key,
         )
     except ValueError as e:

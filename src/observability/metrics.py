@@ -85,9 +85,7 @@ def record_request(
     cost: float,
     saved: float = 0,
 ):
-    REQUESTS_TOTAL.labels(
-        model=model, tier=tier, status=status, cached=str(cached).lower()
-    ).inc()
+    REQUESTS_TOTAL.labels(model=model, tier=tier, status=status, cached=str(cached).lower()).inc()
     REQUEST_LATENCY.labels(model=model, tier=tier).observe(latency)
     TOKENS_USED.labels(model=model, type="total").inc(tokens)
     COST_USD.labels(model=model).inc(cost)

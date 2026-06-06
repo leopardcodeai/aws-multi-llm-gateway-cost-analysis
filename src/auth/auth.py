@@ -54,13 +54,11 @@ async def create_tenant(
         "tenant_id": tenant_id,
         "api_key_hash": api_key_hash,
         "name": name,
-        "monthly_quota": monthly_quota
-        or settings.auth.default_quotas["monthly_tokens"],
+        "monthly_quota": monthly_quota or settings.auth.default_quotas["monthly_tokens"],
         "daily_quota": daily_quota or settings.auth.default_quotas["daily_requests"],
         "used_tokens_month": 0,
         "used_requests_day": 0,
-        "allowed_models": allowed_models
-        or settings.auth.default_quotas["allowed_models"],
+        "allowed_models": allowed_models or settings.auth.default_quotas["allowed_models"],
         "created_at": now,
         "expires_at": None,
         "month_start": int(now // (30 * 86400)) * (30 * 86400),

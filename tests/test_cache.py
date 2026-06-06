@@ -63,9 +63,7 @@ class TestSemanticCache:
 
         cache.qdrant.search.return_value = [mock_hit]
 
-        result = await cache.get_semantic(
-            [{"role": "user", "content": "similar prompt"}]
-        )
+        result = await cache.get_semantic([{"role": "user", "content": "similar prompt"}])
 
         assert result is not None
         assert result.model == "test-model"

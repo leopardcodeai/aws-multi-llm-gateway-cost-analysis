@@ -70,9 +70,7 @@ class SemanticCache:
                     hnsw_config={"ef_construct": settings.cache.qdrant.hnsw_ef},
                 ),
             )
-            logger.info(
-                "qdrant_collection_created", collection=settings.cache.qdrant.collection
-            )
+            logger.info("qdrant_collection_created", collection=settings.cache.qdrant.collection)
 
     def _normalize_prompt(self, messages: list) -> str:
         user_msgs = [m["content"] for m in messages if m["role"] == "user"]
@@ -82,7 +80,7 @@ class SemanticCache:
         return f"{settings.cache.redis.key_prefix}{hashlib.sha256(normalized.encode()).hexdigest()}"
 
     async def get_exact(self, messages: list) -> Optional[CacheEntry]:
-        if not settings.cache.enabled:
+        if not settings.cache.enabled or not self.redis:
             return None
 
         normalized = self._normalize_prompt(messages)
@@ -100,7 +98,7 @@ class SemanticCache:
         return None
 
     async def set_exact(self, messages: list, entry: CacheEntry):
-        if not settings.cache.enabled:
+        if not settings.cache.enabled or not self.redis:
             return
 
         normalized = self._normalize_prompt(messages)
@@ -118,7 +116,7 @@ class SemanticCache:
     async def get_semantic(
         self, messages: list, threshold: Optional[float] = None
     ) -> Optional[CacheEntry]:
-        if not settings.cache.enabled:
+        if not settings.cache.enabled or not self.qdrant or not self.embedder:
             return None
 
         normalized = self._normalize_prompt(messages)
@@ -154,7 +152,7 @@ class SemanticCache:
         return None
 
     async def set_semantic(self, messages: list, entry: CacheEntry):
-        if not settings.cache.enabled:
+        if not settings.cache.enabled or not self.qdrant or not self.embedder:
             return
 
         normalized = self._normalize_prompt(messages)

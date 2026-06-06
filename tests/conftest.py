@@ -53,9 +53,7 @@ def mock_settings(monkeypatch):
                     ),
                 }
             ),
-            cache=CacheSettings(
-                redis=CacheRedisSettings(), qdrant=CacheQdrantSettings()
-            ),
+            cache=CacheSettings(redis=CacheRedisSettings(), qdrant=CacheQdrantSettings()),
             auth=AuthSettings(),
             observability=ObservabilitySettings(),
             models=ModelSettings(),

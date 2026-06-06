@@ -31,9 +31,7 @@ class TestAuth:
         with patch("src.auth.auth.table") as mock_table:
             mock_table.put_item = AsyncMock()
 
-            api_key = await create_tenant(
-                "tenant-1", "Test Tenant", monthly_quota=50000
-            )
+            api_key = await create_tenant("tenant-1", "Test Tenant", monthly_quota=50000)
 
             assert api_key.startswith("llmgw_")
             mock_table.put_item.assert_called_once()

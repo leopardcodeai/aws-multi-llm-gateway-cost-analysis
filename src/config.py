@@ -121,14 +121,14 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    gateway: GatewaySettings = Field(default_factory=GatewaySettings)
-    classifier: ClassifierSettings = Field(default_factory=ClassifierSettings)
-    router: RouterSettings = Field(default_factory=RouterSettings)
-    cache: CacheSettings = Field(default_factory=CacheSettings)
-    auth: AuthSettings = Field(default_factory=AuthSettings)
-    observability: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
-    models: ModelSettings = Field(default_factory=ModelSettings)
-    fallback: FallbackSettings = Field(default_factory=FallbackSettings)
+    gateway: GatewaySettings = Field(default_factory=lambda: GatewaySettings())
+    classifier: ClassifierSettings = Field(default_factory=lambda: ClassifierSettings())
+    router: RouterSettings = Field(default_factory=lambda: RouterSettings())
+    cache: CacheSettings = Field(default_factory=lambda: CacheSettings())
+    auth: AuthSettings = Field(default_factory=lambda: AuthSettings())
+    observability: ObservabilitySettings = Field(default_factory=lambda: ObservabilitySettings())
+    models: ModelSettings = Field(default_factory=lambda: ModelSettings())
+    fallback: FallbackSettings = Field(default_factory=lambda: FallbackSettings())
 
 
 @lru_cache

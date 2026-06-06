@@ -16,12 +16,8 @@ class TestRouter:
     @pytest.fixture
     def mock_openai_response(self):
         mock = MagicMock()
-        mock.choices = [
-            MagicMock(message=MagicMock(content="Test response from OpenAI"))
-        ]
-        mock.usage = MagicMock(
-            prompt_tokens=50, completion_tokens=100, total_tokens=150
-        )
+        mock.choices = [MagicMock(message=MagicMock(content="Test response from OpenAI"))]
+        mock.usage = MagicMock(prompt_tokens=50, completion_tokens=100, total_tokens=150)
         return mock
 
     @pytest.mark.asyncio
@@ -35,9 +31,7 @@ class TestRouter:
 
             with patch("src.router.router.bedrock_runtime") as mock_bedrock:
                 mock_bedrock.invoke_model.return_value = {
-                    "body": MagicMock(
-                        read=lambda: json.dumps(mock_bedrock_response).encode()
-                    )
+                    "body": MagicMock(read=lambda: json.dumps(mock_bedrock_response).encode())
                 }
 
                 response = await route_request(
@@ -58,14 +52,10 @@ class TestRouter:
             }
 
             with patch("src.router.router.openai_client") as mock_openai:
-                mock_openai.chat.completions.create = AsyncMock(
-                    return_value=mock_openai_response
-                )
+                mock_openai.chat.completions.create = AsyncMock(return_value=mock_openai_response)
 
                 response = await route_request(
-                    messages=[
-                        {"role": "user", "content": "Design a distributed system"}
-                    ],
+                    messages=[{"role": "user", "content": "Design a distributed system"}],
                     model="auto",
                 )
 
@@ -76,9 +66,7 @@ class TestRouter:
     async def test_specific_model_override(self, mock_bedrock_response):
         with patch("src.router.router.bedrock_runtime") as mock_bedrock:
             mock_bedrock.invoke_model.return_value = {
-                "body": MagicMock(
-                    read=lambda: json.dumps(mock_bedrock_response).encode()
-                )
+                "body": MagicMock(read=lambda: json.dumps(mock_bedrock_response).encode())
             }
 
             response = await route_request(
@@ -100,11 +88,7 @@ class TestRouter:
             with patch("src.router.router.bedrock_runtime") as mock_bedrock:
                 mock_bedrock.invoke_model.side_effect = [
                     Exception("Primary failed"),
-                    {
-                        "body": MagicMock(
-                            read=lambda: json.dumps(mock_bedrock_response).encode()
-                        )
-                    },
+                    {"body": MagicMock(read=lambda: json.dumps(mock_bedrock_response).encode())},
                 ]
 
                 response = await route_request(

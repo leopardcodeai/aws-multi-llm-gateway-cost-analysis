@@ -59,9 +59,7 @@ async def invoke_bedrock(
     start = time.perf_counter()
 
     body = {
-        "anthropic_version": "bedrock-2023-05-31"
-        if "anthropic" in model_id
-        else "meta-llama",
+        "anthropic_version": "bedrock-2023-05-31" if "anthropic" in model_id else "meta-llama",
         "max_tokens": max_tokens,
         "temperature": temperature,
         "messages": messages,
@@ -120,11 +118,14 @@ async def invoke_openai(
     )
 
     latency_ms = int((time.perf_counter() - start) * 1000)
-    content = response.choices[0].message.content
-    tokens = response.usage.total_tokens
+    content = response.choices[0].message.content or ""
+    usage = response.usage
+    tokens = usage.total_tokens if usage else 0
+    prompt_tokens = usage.prompt_tokens if usage else 0
+    completion_tokens = usage.completion_tokens if usage else 0
     cost = (
-        response.usage.prompt_tokens * MODEL_COSTS.get(model_id, 0)
-        + response.usage.completion_tokens * MODEL_COSTS.get(model_id, 0) * 4
+        prompt_tokens * MODEL_COSTS.get(model_id, 0)
+        + completion_tokens * MODEL_COSTS.get(model_id, 0) * 4
     ) / 1000
 
     return ModelResponse(
@@ -143,13 +144,13 @@ def format_llama_prompt(messages: list) -> str:
         role = msg["role"]
         content = msg["content"]
         if role == "system":
-            prompt += f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n{content}<|eot_id|>"
+            prompt += (
+                f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n{content}<|eot_id|>"
+            )
         elif role == "user":
             prompt += f"<|start_header_id|>user<|end_header_id|>\n{content}<|eot_id|>"
         elif role == "assistant":
-            prompt += (
-                f"<|start_header_id|>assistant<|end_header_id|>\n{content}<|eot_id|>"
-            )
+            prompt += f"<|start_header_id|>assistant<|end_header_id|>\n{content}<|eot_id|>"
     prompt += "<|start_header_id|>assistant<|end_header_id|>\n"
     return prompt
 
@@ -167,9 +168,7 @@ async def route_request(
     if model != "auto":
         return await invoke_specific_model(model, messages, temperature, max_tokens)
 
-    last_user_msg = next(
-        (m["content"] for m in reversed(messages) if m["role"] == "user"), ""
-    )
+    last_user_msg = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
     classification = await classify_complexity(last_user_msg)
 
     tier = classification["tier"]
