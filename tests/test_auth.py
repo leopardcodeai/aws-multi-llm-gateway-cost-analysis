@@ -2,7 +2,14 @@ import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 import time
 
-from src.auth.auth import hash_api_key, generate_api_key, create_tenant, get_tenant_by_key, check_quota, is_model_allowed
+from src.auth.auth import (
+    hash_api_key,
+    generate_api_key,
+    create_tenant,
+    get_tenant_by_key,
+    check_quota,
+    is_model_allowed,
+)
 
 
 class TestAuth:
@@ -24,7 +31,9 @@ class TestAuth:
         with patch("src.auth.auth.table") as mock_table:
             mock_table.put_item = AsyncMock()
 
-            api_key = await create_tenant("tenant-1", "Test Tenant", monthly_quota=50000)
+            api_key = await create_tenant(
+                "tenant-1", "Test Tenant", monthly_quota=50000
+            )
 
             assert api_key.startswith("llmgw_")
             mock_table.put_item.assert_called_once()
@@ -32,19 +41,23 @@ class TestAuth:
     @pytest.mark.asyncio
     async def test_get_tenant_by_key(self):
         with patch("src.auth.auth.table") as mock_table:
-            mock_table.query = AsyncMock(return_value={
-                "Items": [{
-                    "tenant_id": "tenant-1",
-                    "api_key_hash": hash_api_key("llmgw_test"),
-                    "name": "Test Tenant",
-                    "monthly_quota": 100000,
-                    "daily_quota": 1000,
-                    "used_tokens_month": 5000,
-                    "used_requests_day": 10,
-                    "allowed_models": ["auto"],
-                    "created_at": time.time(),
-                }]
-            })
+            mock_table.query = AsyncMock(
+                return_value={
+                    "Items": [
+                        {
+                            "tenant_id": "tenant-1",
+                            "api_key_hash": hash_api_key("llmgw_test"),
+                            "name": "Test Tenant",
+                            "monthly_quota": 100000,
+                            "daily_quota": 1000,
+                            "used_tokens_month": 5000,
+                            "used_requests_day": 10,
+                            "allowed_models": ["auto"],
+                            "created_at": time.time(),
+                        }
+                    ]
+                }
+            )
 
             tenant = await get_tenant_by_key("llmgw_test")
 

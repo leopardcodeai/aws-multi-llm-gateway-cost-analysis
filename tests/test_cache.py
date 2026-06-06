@@ -63,7 +63,9 @@ class TestSemanticCache:
 
         cache.qdrant.search.return_value = [mock_hit]
 
-        result = await cache.get_semantic([{"role": "user", "content": "similar prompt"}])
+        result = await cache.get_semantic(
+            [{"role": "user", "content": "similar prompt"}]
+        )
 
         assert result is not None
         assert result.model == "test-model"
@@ -72,11 +74,19 @@ class TestSemanticCache:
     async def test_semantic_cache_miss_below_threshold(self, cache):
         mock_hit = MagicMock()
         mock_hit.score = 0.85
-        mock_hit.payload = {"response": {}, "model": "test", "tokens": 100, "cost": 0.001, "timestamp": time.time()}
+        mock_hit.payload = {
+            "response": {},
+            "model": "test",
+            "tokens": 100,
+            "cost": 0.001,
+            "timestamp": time.time(),
+        }
 
         cache.qdrant.search.return_value = [mock_hit]
 
-        result = await cache.get_semantic([{"role": "user", "content": "different prompt"}], threshold=0.92)
+        result = await cache.get_semantic(
+            [{"role": "user", "content": "different prompt"}], threshold=0.92
+        )
 
         assert result is None
 

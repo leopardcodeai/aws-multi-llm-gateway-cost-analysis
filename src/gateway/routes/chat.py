@@ -8,7 +8,10 @@ from src.router.router import route_request, ModelResponse
 from src.cache.cache import cache, CacheEntry
 from src.auth.auth import check_quota, record_usage, is_model_allowed
 from src.observability.metrics import (
-    record_request, record_cache_hit, record_cache_miss, record_error
+    record_request,
+    record_cache_hit,
+    record_cache_miss,
+    record_error,
 )
 from src.config import get_settings
 
@@ -51,7 +54,9 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
     tenant = request.state.tenant
 
     if not await is_model_allowed(tenant, body.model):
-        raise HTTPException(status_code=403, detail=f"Model {body.model} not allowed for this tenant")
+        raise HTTPException(
+            status_code=403, detail=f"Model {body.model} not allowed for this tenant"
+        )
 
     estimated_tokens = sum(len(m.content) for m in body.messages) // 4 + body.max_tokens
     quota_ok, quota_msg = await check_quota(tenant, estimated_tokens)
@@ -64,22 +69,46 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
             record_cache_hit("exact")
             latency = (time.perf_counter() - start) * 1000
             record_request(
-                model=cached.model, tier="cached", status="success", cached=True,
-                latency=latency/1000, tokens=cached.tokens, cost=cached.cost,
-                saved=estimate_savings(cached.model, cached.tokens)
+                model=cached.model,
+                tier="cached",
+                status="success",
+                cached=True,
+                latency=latency / 1000,
+                tokens=cached.tokens,
+                cost=cached.cost,
+                saved=estimate_savings(cached.model, cached.tokens),
             )
-            return build_response(cached.response, cached.model, cached.tokens, cached.cost, True, "cached")
+            return build_response(
+                cached.response,
+                cached.model,
+                cached.tokens,
+                cached.cost,
+                True,
+                "cached",
+            )
 
         cached = await cache.get_semantic([m.model_dump() for m in body.messages])
         if cached:
             record_cache_hit("semantic")
             latency = (time.perf_counter() - start) * 1000
             record_request(
-                model=cached.model, tier="cached", status="success", cached=True,
-                latency=latency/1000, tokens=cached.tokens, cost=cached.cost,
-                saved=estimate_savings(cached.model, cached.tokens)
+                model=cached.model,
+                tier="cached",
+                status="success",
+                cached=True,
+                latency=latency / 1000,
+                tokens=cached.tokens,
+                cost=cached.cost,
+                saved=estimate_savings(cached.model, cached.tokens),
             )
-            return build_response(cached.response, cached.model, cached.tokens, cached.cost, True, "cached")
+            return build_response(
+                cached.response,
+                cached.model,
+                cached.tokens,
+                cached.cost,
+                True,
+                "cached",
+            )
 
     record_cache_miss()
 
@@ -95,12 +124,19 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
         saved = estimate_savings(response.model, response.tokens_used)
 
         record_request(
-            model=response.model, tier=response.provider, status="success", cached=False,
-            latency=latency/1000, tokens=response.tokens_used, cost=response.cost_usd, saved=saved
+            model=response.model,
+            tier=response.provider,
+            status="success",
+            cached=False,
+            latency=latency / 1000,
+            tokens=response.tokens_used,
+            cost=response.cost_usd,
+            saved=saved,
         )
 
         if response.fallback_used:
             from src.observability.metrics import record_fallback
+
             record_fallback("primary", response.model)
 
         entry = CacheEntry(
@@ -130,20 +166,38 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
         logger.error("chat_completion_failed", error=str(e), tenant=tenant.tenant_id)
         record_error(type(e).__name__, body.model)
         latency = (time.perf_counter() - start) * 1000
-        record_request(model=body.model, tier="error", status="error", cached=False, latency=latency/1000, tokens=0, cost=0)
+        record_request(
+            model=body.model,
+            tier="error",
+            status="error",
+            cached=False,
+            latency=latency / 1000,
+            tokens=0,
+            cost=0,
+        )
         raise HTTPException(status_code=500, detail=f"Model inference failed: {str(e)}")
 
 
-def build_response(content: dict, model: str, tokens: int, cost: float, cached: bool, tier: str, fallback_used: bool = False) -> ChatCompletionResponse:
+def build_response(
+    content: dict,
+    model: str,
+    tokens: int,
+    cost: float,
+    cached: bool,
+    tier: str,
+    fallback_used: bool = False,
+) -> ChatCompletionResponse:
     return ChatCompletionResponse(
         id=f"chatcmpl-{int(time.time() * 1000)}",
         created=int(time.time()),
         model=model,
-        choices=[{
-            "index": 0,
-            "message": content,
-            "finish_reason": "stop",
-        }],
+        choices=[
+            {
+                "index": 0,
+                "message": content,
+                "finish_reason": "stop",
+            }
+        ],
         usage={
             "prompt_tokens": tokens // 2,
             "completion_tokens": tokens // 2,

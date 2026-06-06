@@ -39,7 +39,13 @@ def generate_api_key() -> str:
     return f"{settings.auth.api_key_prefix}{secrets.token_urlsafe(32)}"
 
 
-async def create_tenant(tenant_id: str, name: str, monthly_quota: Optional[int] = None, daily_quota: Optional[int] = None, allowed_models: Optional[list] = None) -> str:
+async def create_tenant(
+    tenant_id: str,
+    name: str,
+    monthly_quota: Optional[int] = None,
+    daily_quota: Optional[int] = None,
+    allowed_models: Optional[list] = None,
+) -> str:
     api_key = generate_api_key()
     api_key_hash = hash_api_key(api_key)
 
@@ -48,11 +54,13 @@ async def create_tenant(tenant_id: str, name: str, monthly_quota: Optional[int] 
         "tenant_id": tenant_id,
         "api_key_hash": api_key_hash,
         "name": name,
-        "monthly_quota": monthly_quota or settings.auth.default_quotas["monthly_tokens"],
+        "monthly_quota": monthly_quota
+        or settings.auth.default_quotas["monthly_tokens"],
         "daily_quota": daily_quota or settings.auth.default_quotas["daily_requests"],
         "used_tokens_month": 0,
         "used_requests_day": 0,
-        "allowed_models": allowed_models or settings.auth.default_quotas["allowed_models"],
+        "allowed_models": allowed_models
+        or settings.auth.default_quotas["allowed_models"],
         "created_at": now,
         "expires_at": None,
         "month_start": int(now // (30 * 86400)) * (30 * 86400),
@@ -60,7 +68,12 @@ async def create_tenant(tenant_id: str, name: str, monthly_quota: Optional[int] 
     }
 
     try:
-        await asyncio.get_event_loop().run_in_executor(None, lambda: table.put_item(Item=item, ConditionExpression="attribute_not_exists(tenant_id)"))
+        await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: table.put_item(
+                Item=item, ConditionExpression="attribute_not_exists(tenant_id)"
+            ),
+        )
         logger.info("tenant_created", tenant_id=tenant_id)
         return api_key
     except ClientError as e:

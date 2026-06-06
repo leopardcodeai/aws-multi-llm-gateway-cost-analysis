@@ -25,7 +25,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if not auth_header or not auth_header.startswith("Bearer "):
             return JSONResponse(
                 status_code=401,
-                content={"detail": "Missing or invalid Authorization header", "type": "auth_error"},
+                content={
+                    "detail": "Missing or invalid Authorization header",
+                    "type": "auth_error",
+                },
             )
 
         api_key = auth_header[7:]

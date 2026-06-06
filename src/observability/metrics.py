@@ -1,4 +1,10 @@
-from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import (
+    Counter,
+    Histogram,
+    Gauge,
+    generate_latest,
+    CONTENT_TYPE_LATEST,
+)
 from fastapi import Response
 import structlog
 
@@ -69,8 +75,19 @@ ERRORS = Counter(
 )
 
 
-def record_request(model: str, tier: str, status: str, cached: bool, latency: float, tokens: int, cost: float, saved: float = 0):
-    REQUESTS_TOTAL.labels(model=model, tier=tier, status=status, cached=str(cached).lower()).inc()
+def record_request(
+    model: str,
+    tier: str,
+    status: str,
+    cached: bool,
+    latency: float,
+    tokens: int,
+    cost: float,
+    saved: float = 0,
+):
+    REQUESTS_TOTAL.labels(
+        model=model, tier=tier, status=status, cached=str(cached).lower()
+    ).inc()
     REQUEST_LATENCY.labels(model=model, tier=tier).observe(latency)
     TOKENS_USED.labels(model=model, type="total").inc(tokens)
     COST_USD.labels(model=model).inc(cost)

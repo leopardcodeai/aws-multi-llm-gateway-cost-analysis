@@ -49,7 +49,9 @@ class SemanticCache:
             api_key=settings.cache.qdrant.api_key,
         )
 
-        self.embedder = SentenceTransformer(settings.models.embedding_model, device=settings.models.device)
+        self.embedder = SentenceTransformer(
+            settings.models.embedding_model, device=settings.models.device
+        )
 
         await self._ensure_collection()
         self._initialized = True
@@ -68,7 +70,9 @@ class SemanticCache:
                     hnsw_config={"ef_construct": settings.cache.qdrant.hnsw_ef},
                 ),
             )
-            logger.info("qdrant_collection_created", collection=settings.cache.qdrant.collection)
+            logger.info(
+                "qdrant_collection_created", collection=settings.cache.qdrant.collection
+            )
 
     def _normalize_prompt(self, messages: list) -> str:
         user_msgs = [m["content"] for m in messages if m["role"] == "user"]
@@ -111,7 +115,9 @@ class SemanticCache:
         except Exception as e:
             logger.warning("redis_set_failed", error=str(e))
 
-    async def get_semantic(self, messages: list, threshold: Optional[float] = None) -> Optional[CacheEntry]:
+    async def get_semantic(
+        self, messages: list, threshold: Optional[float] = None
+    ) -> Optional[CacheEntry]:
         if not settings.cache.enabled:
             return None
 

@@ -45,11 +45,14 @@ async def create_tenant_endpoint(body: CreateTenantRequest):
         return TenantResponse(
             tenant_id=body.tenant_id,
             name=body.name,
-            monthly_quota=body.monthly_quota or settings.auth.default_quotas["monthly_tokens"],
-            daily_quota=body.daily_quota or settings.auth.default_quotas["daily_requests"],
+            monthly_quota=body.monthly_quota
+            or settings.auth.default_quotas["monthly_tokens"],
+            daily_quota=body.daily_quota
+            or settings.auth.default_quotas["daily_requests"],
             used_tokens_month=0,
             used_requests_day=0,
-            allowed_models=body.allowed_models or settings.auth.default_quotas["allowed_models"],
+            allowed_models=body.allowed_models
+            or settings.auth.default_quotas["allowed_models"],
             api_key=api_key,
         )
     except ValueError as e:
@@ -61,7 +64,10 @@ async def create_tenant_endpoint(body: CreateTenantRequest):
 
 @router.get("/tenants/{tenant_id}", response_model=TenantResponse)
 async def get_tenant(tenant_id: str, request: Request):
-    if request.state.tenant.tenant_id != tenant_id and "admin" not in request.state.tenant.allowed_models:
+    if (
+        request.state.tenant.tenant_id != tenant_id
+        and "admin" not in request.state.tenant.allowed_models
+    ):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     # This would need a get_tenant_by_id function
@@ -79,8 +85,12 @@ async def get_stats(request: Request):
         "used_tokens_month": tenant.used_tokens_month,
         "used_requests_day": tenant.used_requests_day,
         "quota_usage_percent": {
-            "monthly": (tenant.used_tokens_month / tenant.monthly_quota * 100) if tenant.monthly_quota > 0 else 0,
-            "daily": (tenant.used_requests_day / tenant.daily_quota * 100) if tenant.daily_quota > 0 else 0,
+            "monthly": (tenant.used_tokens_month / tenant.monthly_quota * 100)
+            if tenant.monthly_quota > 0
+            else 0,
+            "daily": (tenant.used_requests_day / tenant.daily_quota * 100)
+            if tenant.daily_quota > 0
+            else 0,
         },
         "allowed_models": tenant.allowed_models,
     }

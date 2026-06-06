@@ -53,11 +53,15 @@ MODEL_COSTS = {
 }
 
 
-async def invoke_bedrock(model_id: str, messages: list, max_tokens: int, temperature: float) -> ModelResponse:
+async def invoke_bedrock(
+    model_id: str, messages: list, max_tokens: int, temperature: float
+) -> ModelResponse:
     start = time.perf_counter()
 
     body = {
-        "anthropic_version": "bedrock-2023-05-31" if "anthropic" in model_id else "meta-llama",
+        "anthropic_version": "bedrock-2023-05-31"
+        if "anthropic" in model_id
+        else "meta-llama",
         "max_tokens": max_tokens,
         "temperature": temperature,
         "messages": messages,
@@ -103,7 +107,9 @@ async def invoke_bedrock(model_id: str, messages: list, max_tokens: int, tempera
     )
 
 
-async def invoke_openai(model_id: str, messages: list, max_tokens: int, temperature: float) -> ModelResponse:
+async def invoke_openai(
+    model_id: str, messages: list, max_tokens: int, temperature: float
+) -> ModelResponse:
     start = time.perf_counter()
 
     response = await openai_client.chat.completions.create(
@@ -116,8 +122,10 @@ async def invoke_openai(model_id: str, messages: list, max_tokens: int, temperat
     latency_ms = int((time.perf_counter() - start) * 1000)
     content = response.choices[0].message.content
     tokens = response.usage.total_tokens
-    cost = (response.usage.prompt_tokens * MODEL_COSTS.get(model_id, 0) +
-            response.usage.completion_tokens * MODEL_COSTS.get(model_id, 0) * 4) / 1000
+    cost = (
+        response.usage.prompt_tokens * MODEL_COSTS.get(model_id, 0)
+        + response.usage.completion_tokens * MODEL_COSTS.get(model_id, 0) * 4
+    ) / 1000
 
     return ModelResponse(
         content=content,
@@ -139,7 +147,9 @@ def format_llama_prompt(messages: list) -> str:
         elif role == "user":
             prompt += f"<|start_header_id|>user<|end_header_id|>\n{content}<|eot_id|>"
         elif role == "assistant":
-            prompt += f"<|start_header_id|>assistant<|end_header_id|>\n{content}<|eot_id|>"
+            prompt += (
+                f"<|start_header_id|>assistant<|end_header_id|>\n{content}<|eot_id|>"
+            )
     prompt += "<|start_header_id|>assistant<|end_header_id|>\n"
     return prompt
 
@@ -148,11 +158,18 @@ def estimate_tokens(text: str) -> int:
     return len(text) // 4
 
 
-async def route_request(messages: list, model: str = "auto", temperature: float = 0.7, max_tokens: int = 4096) -> ModelResponse:
+async def route_request(
+    messages: list,
+    model: str = "auto",
+    temperature: float = 0.7,
+    max_tokens: int = 4096,
+) -> ModelResponse:
     if model != "auto":
         return await invoke_specific_model(model, messages, temperature, max_tokens)
 
-    last_user_msg = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
+    last_user_msg = next(
+        (m["content"] for m in reversed(messages) if m["role"] == "user"), ""
+    )
     classification = await classify_complexity(last_user_msg)
 
     tier = classification["tier"]
@@ -164,23 +181,42 @@ async def route_request(messages: list, model: str = "auto", temperature: float 
     final_fallback = tier_config.final_fallback
     provider = tier_config.provider
 
-    logger.info("routing_decision", tier=tier, confidence=confidence, primary=primary_model, fallback=fallback_model)
+    logger.info(
+        "routing_decision",
+        tier=tier,
+        confidence=confidence,
+        primary=primary_model,
+        fallback=fallback_model,
+    )
 
     try:
         if provider == "bedrock":
-            response = await invoke_bedrock(primary_model, messages, tier_config.max_tokens, tier_config.temperature)
+            response = await invoke_bedrock(
+                primary_model, messages, tier_config.max_tokens, tier_config.temperature
+            )
         else:
-            response = await invoke_openai(primary_model, messages, tier_config.max_tokens, tier_config.temperature)
+            response = await invoke_openai(
+                primary_model, messages, tier_config.max_tokens, tier_config.temperature
+            )
 
         response.confidence = confidence
         return response
 
     except Exception as e:
         logger.warning("primary_model_failed", model=primary_model, error=str(e))
-        return await try_fallback(messages, fallback_model, final_fallback, tier_config, confidence, str(e))
+        return await try_fallback(
+            messages, fallback_model, final_fallback, tier_config, confidence, str(e)
+        )
 
 
-async def try_fallback(messages: list, fallback: str, final_fallback: Optional[str], tier_config, confidence: float, error: str) -> ModelResponse:
+async def try_fallback(
+    messages: list,
+    fallback: str,
+    final_fallback: Optional[str],
+    tier_config,
+    confidence: float,
+    error: str,
+) -> ModelResponse:
     for attempt, model_id in enumerate([fallback, final_fallback]):
         if not model_id:
             continue
@@ -190,9 +226,13 @@ async def try_fallback(messages: list, fallback: str, final_fallback: Optional[s
             provider = "openai" if model_id.startswith("gpt") else "bedrock"
 
             if provider == "bedrock":
-                response = await invoke_bedrock(model_id, messages, tier_config.max_tokens, tier_config.temperature)
+                response = await invoke_bedrock(
+                    model_id, messages, tier_config.max_tokens, tier_config.temperature
+                )
             else:
-                response = await invoke_openai(model_id, messages, tier_config.max_tokens, tier_config.temperature)
+                response = await invoke_openai(
+                    model_id, messages, tier_config.max_tokens, tier_config.temperature
+                )
 
             response.fallback_used = True
             response.confidence = confidence * 0.8
@@ -205,7 +245,9 @@ async def try_fallback(messages: list, fallback: str, final_fallback: Optional[s
     raise Exception(f"All models failed. Last error: {error}")
 
 
-async def invoke_specific_model(model: str, messages: list, temperature: float, max_tokens: int) -> ModelResponse:
+async def invoke_specific_model(
+    model: str, messages: list, temperature: float, max_tokens: int
+) -> ModelResponse:
     if model.startswith("gpt"):
         return await invoke_openai(model, messages, max_tokens, temperature)
     return await invoke_bedrock(model, messages, max_tokens, temperature)

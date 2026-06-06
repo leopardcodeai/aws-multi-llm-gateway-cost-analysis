@@ -41,21 +41,31 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if request_counts[minute_key] > rpm_limit:
             return JSONResponse(
                 status_code=429,
-                content={"detail": "Rate limit exceeded (per minute)", "type": "rate_limit_error"},
+                content={
+                    "detail": "Rate limit exceeded (per minute)",
+                    "type": "rate_limit_error",
+                },
                 headers={"Retry-After": "60"},
             )
 
         if request_counts[hour_key] > rph_limit:
             return JSONResponse(
                 status_code=429,
-                content={"detail": "Rate limit exceeded (per hour)", "type": "rate_limit_error"},
+                content={
+                    "detail": "Rate limit exceeded (per hour)",
+                    "type": "rate_limit_error",
+                },
                 headers={"Retry-After": "3600"},
             )
 
         response = await call_next(request)
         response.headers["X-RateLimit-Limit-Minute"] = str(rpm_limit)
-        response.headers["X-RateLimit-Remaining-Minute"] = str(max(0, rpm_limit - request_counts[minute_key]))
+        response.headers["X-RateLimit-Remaining-Minute"] = str(
+            max(0, rpm_limit - request_counts[minute_key])
+        )
         response.headers["X-RateLimit-Limit-Hour"] = str(rph_limit)
-        response.headers["X-RateLimit-Remaining-Hour"] = str(max(0, rph_limit - request_counts[hour_key]))
+        response.headers["X-RateLimit-Remaining-Hour"] = str(
+            max(0, rph_limit - request_counts[hour_key])
+        )
 
         return response
