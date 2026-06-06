@@ -89,7 +89,7 @@ flowchart TB
         O -->|Fail/Low Conf| S
         P -->|Fail/Low Conf| S
         Q -->|Fail/Low Conf| R
-        R -->|Fail| T[Claude 3.5 Sonnet\n(Final Fallback)]
+        R -->|Fail| T[Claude 3.5 Sonnet - Final Fallback]
     end
 
     subgraph Observability["📊 Observability"]
