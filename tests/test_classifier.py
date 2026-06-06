@@ -1,14 +1,13 @@
-import json
-from unittest.mock import MagicMock, patch
-
 import pytest
+from unittest.mock import AsyncMock, patch, MagicMock
+import json
 
 from src.classifier.classifier import classify_complexity, get_tier_for_score
 
 
 class TestClassifier:
     @pytest.mark.asyncio
-    async def test_classify_simple(self):
+    async def test_classify_simple(self, mock_bedrock_runtime):
         mock_response = {
             "content": [
                 {
@@ -23,17 +22,16 @@ class TestClassifier:
             ]
         }
 
-        with patch("src.classifier.classifier.bedrock_runtime") as mock_bedrock:
-            mock_bedrock.invoke_model.return_value = {
-                "body": MagicMock(read=lambda: json.dumps(mock_response).encode())
-            }
-            result = await classify_complexity("Classify this sentiment: I love this!")
+        mock_bedrock_runtime.invoke_model.return_value = {
+            "body": MagicMock(read=lambda: json.dumps(mock_response).encode())
+        }
+        result = await classify_complexity("Classify this sentiment: I love this!")
 
         assert result["tier"] == "simple"
         assert result["confidence"] == 0.95
 
     @pytest.mark.asyncio
-    async def test_classify_medium(self):
+    async def test_classify_medium(self, mock_bedrock_runtime):
         mock_response = {
             "content": [
                 {
@@ -48,17 +46,16 @@ class TestClassifier:
             ]
         }
 
-        with patch("src.classifier.classifier.bedrock_runtime") as mock_bedrock:
-            mock_bedrock.invoke_model.return_value = {
-                "body": MagicMock(read=lambda: json.dumps(mock_response).encode())
-            }
-            result = await classify_complexity("Write a Python function to sort a list")
+        mock_bedrock_runtime.invoke_model.return_value = {
+            "body": MagicMock(read=lambda: json.dumps(mock_response).encode())
+        }
+        result = await classify_complexity("Write a Python function to sort a list")
 
         assert result["tier"] == "medium"
         assert result["confidence"] == 0.85
 
     @pytest.mark.asyncio
-    async def test_classify_complex(self):
+    async def test_classify_complex(self, mock_bedrock_runtime):
         mock_response = {
             "content": [
                 {
@@ -73,22 +70,18 @@ class TestClassifier:
             ]
         }
 
-        with patch("src.classifier.classifier.bedrock_runtime") as mock_bedrock:
-            mock_bedrock.invoke_model.return_value = {
-                "body": MagicMock(read=lambda: json.dumps(mock_response).encode())
-            }
-            result = await classify_complexity(
-                "Design a distributed system for real-time analytics"
-            )
+        mock_bedrock_runtime.invoke_model.return_value = {
+            "body": MagicMock(read=lambda: json.dumps(mock_response).encode())
+        }
+        result = await classify_complexity("Design a distributed system for real-time analytics")
 
         assert result["tier"] == "complex"
         assert result["confidence"] == 0.90
 
     @pytest.mark.asyncio
-    async def test_classify_fallback_on_error(self):
-        with patch("src.classifier.classifier.bedrock_runtime") as mock_bedrock:
-            mock_bedrock.invoke_model.side_effect = Exception("Bedrock error")
-            result = await classify_complexity("Some prompt")
+    async def test_classify_fallback_on_error(self, mock_bedrock_runtime):
+        mock_bedrock_runtime.invoke_model.side_effect = Exception("Bedrock error")
+        result = await classify_complexity("Some prompt")
 
         assert result["tier"] == "medium"
         assert result["confidence"] == 0.5

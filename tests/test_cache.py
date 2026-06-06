@@ -1,19 +1,18 @@
+import pytest
+from unittest.mock import AsyncMock, patch, MagicMock
 import json
 import time
-from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-
-from src.cache.cache import CacheEntry, SemanticCache
+from src.cache.cache import SemanticCache, CacheEntry
 
 
 class TestSemanticCache:
     @pytest.fixture
-    def cache(self):
+    def cache(self, mock_redis, mock_qdrant):
         c = SemanticCache()
         c._initialized = True
-        c.redis = AsyncMock()
-        c.qdrant = AsyncMock()
+        c.redis = mock_redis
+        c.qdrant = mock_qdrant
         c.embedder = MagicMock()
         c.embedder.encode.return_value = [[0.1] * 384]
         return c

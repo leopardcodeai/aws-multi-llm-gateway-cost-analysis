@@ -1,9 +1,9 @@
-import json
-from unittest.mock import AsyncMock, MagicMock, patch
-
 import pytest
+from unittest.mock import AsyncMock, patch, MagicMock
+import json
+import time
 
-from src.router.router import route_request
+from src.router.router import route_request, ModelResponse
 
 
 class TestRouter:
@@ -22,7 +22,9 @@ class TestRouter:
         return mock
 
     @pytest.mark.asyncio
-    async def test_route_simple_to_llama(self, mock_bedrock_response):
+    async def test_route_simple_to_llama(
+        self, mock_bedrock_response, mock_bedrock_runtime, mock_openai_client
+    ):
         with patch("src.router.router.classify_complexity") as mock_classify:
             mock_classify.return_value = {
                 "tier": "simple",
@@ -30,21 +32,21 @@ class TestRouter:
                 "reasoning": "Simple task",
             }
 
-            with patch("src.router.router.bedrock_runtime") as mock_bedrock:
-                mock_bedrock.invoke_model.return_value = {
-                    "body": MagicMock(read=lambda: json.dumps(mock_bedrock_response).encode())
-                }
+            mock_bedrock_runtime.invoke_model.return_value = {
+                "body": MagicMock(read=lambda: json.dumps(mock_bedrock_response).encode())
+            }
 
-                response = await route_request(
-                    messages=[{"role": "user", "content": "Classify: positive"}],
-                    model="auto",
-                )
+            response = await route_request(
+                messages=[{"role": "user", "content": "Classify: positive"}], model="auto"
+            )
 
-                assert response.provider == "bedrock"
-                assert "llama" in response.model.lower()
+            assert response.provider == "bedrock"
+            assert "llama" in response.model.lower()
 
     @pytest.mark.asyncio
-    async def test_route_complex_to_gpt4o(self, mock_openai_response):
+    async def test_route_complex_to_gpt4o(
+        self, mock_openai_response, mock_bedrock_runtime, mock_openai_client
+    ):
         with patch("src.router.router.classify_complexity") as mock_classify:
             mock_classify.return_value = {
                 "tier": "complex",
@@ -52,33 +54,31 @@ class TestRouter:
                 "reasoning": "Complex reasoning",
             }
 
-            with patch("src.router.router.openai_client") as mock_openai:
-                mock_openai.chat.completions.create = AsyncMock(return_value=mock_openai_response)
-
-                response = await route_request(
-                    messages=[{"role": "user", "content": "Design a distributed system"}],
-                    model="auto",
-                )
-
-                assert response.provider == "openai"
-                assert "gpt" in response.model.lower()
-
-    @pytest.mark.asyncio
-    async def test_specific_model_override(self, mock_bedrock_response):
-        with patch("src.router.router.bedrock_runtime") as mock_bedrock:
-            mock_bedrock.invoke_model.return_value = {
-                "body": MagicMock(read=lambda: json.dumps(mock_bedrock_response).encode())
-            }
-
-            response = await route_request(
-                messages=[{"role": "user", "content": "Test"}],
-                model="meta.llama3-1-8b-instruct-v1:0",
+            mock_openai_client.chat.completions.create = AsyncMock(
+                return_value=mock_openai_response
             )
 
-            assert response.model == "meta.llama3-1-8b-instruct-v1:0"
+            response = await route_request(
+                messages=[{"role": "user", "content": "Design a distributed system"}], model="auto"
+            )
+
+            assert response.provider == "openai"
+            assert "gpt" in response.model.lower()
 
     @pytest.mark.asyncio
-    async def test_fallback_on_primary_failure(self, mock_bedrock_response):
+    async def test_specific_model_override(self, mock_bedrock_response, mock_bedrock_runtime):
+        mock_bedrock_runtime.invoke_model.return_value = {
+            "body": MagicMock(read=lambda: json.dumps(mock_bedrock_response).encode())
+        }
+
+        response = await route_request(
+            messages=[{"role": "user", "content": "Test"}], model="meta.llama3-1-8b-instruct-v1:0"
+        )
+
+        assert response.model == "meta.llama3-1-8b-instruct-v1:0"
+
+    @pytest.mark.asyncio
+    async def test_fallback_on_primary_failure(self, mock_bedrock_response, mock_bedrock_runtime):
         with patch("src.router.router.classify_complexity") as mock_classify:
             mock_classify.return_value = {
                 "tier": "simple",
@@ -86,14 +86,13 @@ class TestRouter:
                 "reasoning": "Simple",
             }
 
-            with patch("src.router.router.bedrock_runtime") as mock_bedrock:
-                mock_bedrock.invoke_model.side_effect = [
-                    Exception("Primary failed"),
-                    {"body": MagicMock(read=lambda: json.dumps(mock_bedrock_response).encode())},
-                ]
+            mock_bedrock_runtime.invoke_model.side_effect = [
+                Exception("Primary failed"),
+                {"body": MagicMock(read=lambda: json.dumps(mock_bedrock_response).encode())},
+            ]
 
-                response = await route_request(
-                    messages=[{"role": "user", "content": "Test"}], model="auto"
-                )
+            response = await route_request(
+                messages=[{"role": "user", "content": "Test"}], model="auto"
+            )
 
-                assert response.fallback_used is True
+            assert response.fallback_used is True
