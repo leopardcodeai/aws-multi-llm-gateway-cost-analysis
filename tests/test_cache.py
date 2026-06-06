@@ -1,9 +1,10 @@
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 import json
 import time
+from unittest.mock import MagicMock
 
-from src.cache.cache import SemanticCache, CacheEntry
+import pytest
+
+from src.cache.cache import CacheEntry, SemanticCache
 
 
 class TestSemanticCache:

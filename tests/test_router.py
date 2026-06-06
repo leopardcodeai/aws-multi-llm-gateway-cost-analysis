@@ -1,9 +1,9 @@
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 import json
-import time
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.router.router import route_request, ModelResponse
+import pytest
+
+from src.router.router import route_request
 
 
 class TestRouter:
