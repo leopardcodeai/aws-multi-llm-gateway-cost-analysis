@@ -116,9 +116,9 @@ flowchart TB
 
 ### Visual Architecture Diagram
 
-![Architecture Diagram](diagrams/architecture.excalidraw)
+![Architecture Diagram](diagrams/architecture.svg)
 
-> **Open in [Excalidraw](https://excalidraw.com/#json=...) to edit/view interactively**
+> **Open in [Excalidraw](https://excalidraw.com/#json=...) to edit/view interactively** — [Download `.excalidraw`](diagrams/architecture.excalidraw)
 
 ---
 
