@@ -60,3 +60,16 @@ models/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# AI Agents & Environment Configurations
+.agents/
+.claude/
+.gemini/
+.aionrs/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.python-version
+.eslintcache
+.mypy_cache/
